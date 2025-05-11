@@ -1,28 +1,49 @@
 import pandas as pd
+import re
 
+# 1. 데이터 로드
 phishing_df = pd.read_csv('init_phishing.csv', usecols=["Spam message"], encoding='cp949')
-normal_df = pd.read_csv('normal_sms_samples_flat.csv', encoding = 'cp949')
+normal_df = pd.read_csv('normal_sms_samples_flat.csv', encoding='cp949')
 
+# 2. 메시지 컬럼 통일
 phishing_df['message'] = phishing_df['Spam message']
 normal_df['message'] = normal_df['normal message']
 
-#라벨 추가
-phishing_df['label'] = 1
+# 3. 라벨 지정 
+phishing_df['label'] = 1 
 normal_df['label'] = 0
 
-#하나의 data로 병합
+# 4. 병합
 combined_df = pd.concat([phishing_df, normal_df], ignore_index=True)
 
-#전처리
-combined_df['message'] = (
-        combined_df['message']
-        .astype(str)
-        .str.replace(r'ifg@', '', regex=True)
-        .str.replace(r'\*+', '', regex=True)
-        .str.replace(r'[^가-힣a-zA-Z0-9\s]', '', regex=True)
-        .str.strip()  # 공백 제거
-    )
+from konlpy.tag import Okt      #konlpy 라이브러리를 활용해 형태소 분석 및 불용어 제거를 추가하였음.
+okt = Okt()                     
 
+# 한국어 불용어 리스트
+stopwords = [
+    '그', '이', '저', '것', '수', '등', '들', '및', '그리고', '또한', '에서', '하다',
+    '입니다', '하지만', '그러나', '하면', '되다', '입니다', '있다', '없다',
+    '입니다', '입니다만', '하지만', '어떤', '아무', '그런', '즉', '때문에', '위해'
+]
+
+# 형태소 분석 및 불용어 제거 함수
+def tokenize_and_filter(text):
+    tokens = okt.morphs(text, stem=True)  # 형태소 분석 + 원형 복원
+    filtered = [word for word in tokens if word not in stopwords and len(word) > 1]
+    return ' '.join(filtered)
+
+# 7. 전처리 적용
+combined_df['message'] = (
+    combined_df['message']
+    .astype(str)
+    .str.replace(r'ifg@', '', regex=True)
+    .str.replace(r'\*+', '', regex=True)
+    .str.replace(r'[^가-힣a-zA-Z0-9\s]', '', regex=True)
+    .str.strip()
+    .apply(tokenize_and_filter)
+)
+
+# 8. 필요한 컬럼만 유지
 combined_df = combined_df[['message', 'label']]
 
 from sklearn.model_selection import train_test_split
@@ -38,7 +59,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 # TF-IDF 벡터화
-vectorizer = TfidfVectorizer(max_features=7000)  # 가장많이 출현된 상위 단어 7000개
+vectorizer = TfidfVectorizer(max_features=7000)  # 가장많이 출현된 상위 단어로 가중치를 설정함함
 X_train_vec = vectorizer.fit_transform(X_train)  #벡터화 문자 -> 숫자
 X_test_vec = vectorizer.transform(X_test)
 
@@ -86,6 +107,6 @@ user_input = (
 # 특수 문자 제거 (한글, 영문, 숫자, 공백만 남기기)
 user_input = re.sub(r'[^가-힣a-zA-Z0-9\s]', '', user_input)
 
-# 예측 결과 출력
+#예측 결과 출력
 print(user_input)
 print(predict_message(user_input))
