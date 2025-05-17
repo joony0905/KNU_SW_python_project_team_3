@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스팸 메시지 분류기</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>스팸 메시지 분류기</h1>
+        <form action="/predict" method="post">
+            <label for="message">메시지를 입력하세요:</label><br>
+            <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
+            <div>
+                <label>모델 선택:</label><br>
+                <input type="radio" id="naive_bayes" name="model_choice" value="naive_bayes" checked>
+                <label for="naive_bayes">Naive Bayes</label>
+                <input type="radio" id="random_forest" name="model_choice" value="random_forest">
+                <label for="random_forest">Random Forest</label>
+            </div>
+            <br>
+            <input type="submit" value="분류하기">
+        </form>
+        {% if input_text %}
+            <h2>입력 메시지:</h2>
+            <p>{{ input_text }}</p>
+        {% endif %}
+        {% if prediction_text %}
+            <h2>예측 결과:</h2>
+            <p>{{ prediction_text | safe }}</p>
+        {% endif %}
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
