@@ -28,13 +28,15 @@
         {% endif %}
         {% if prediction_text %}
             <h2>예측 결과:</h2>
-                    {% if '확실합니다' in prediction_text %}
-			            <p class="result-spam">{{ prediction_text | safe }}</p>
-                    {% elif ' 의심됩니다.' in prediction_text%}
-			            <p class="result-sus">{{ prediction_text | safe }}</p>
-		            {% else %}
-			            <p class="result-norm">{{ prediction_text | safe }}</p>
-	                {% endif %}
+	    	{% if '확실합니다' in prediction_text %}
+			        <p class="result-spam">{{ prediction_text | safe }}</p>
+	    	{% elif ' 의심됩니다.' in prediction_text%}
+			        <p class="result-sus">{{ prediction_text | safe }}</p>
+ 		{% elif  ' 정상 문자' in prediction_text%}
+				<p class="result-norm">{{ prediction_text | safe }}</p>
+	        {% else %}
+			            
+	        {% endif %}
 	    {% else %}
 	    
         {% endif %}
