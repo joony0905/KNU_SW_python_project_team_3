@@ -32,6 +32,10 @@ textarea {
 	color: green;
 	font-weight:bold;
 }
+.result-sus{
+	color: orange;
+	font-weight:bold;
+}
 .result-spam{
 	color: red;
 	font-weight: bold;
