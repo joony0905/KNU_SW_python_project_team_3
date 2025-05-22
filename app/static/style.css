@@ -28,7 +28,15 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+.result-norm{
+	color: green;
+	font-weight:bold;
+}
+.result-spam{
+	color: red;
+	font-weight: bold;
 
+}
 input[type="submit"] {
     background-color: #4CAF50;
     color: white;
