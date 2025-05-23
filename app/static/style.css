@@ -39,7 +39,6 @@ textarea {
 .result-spam{
 	color: red;
 	font-weight: bold;
-
 }
 input[type="submit"] {
     background-color: #4CAF50;
@@ -48,10 +47,62 @@ input[type="submit"] {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+}
+input[type="submit"]:active {
+    transform: scale(0.95);  /* 클릭 시 버튼 크기 줄어듦 */
 }
 
 input[type="submit"]:hover {
     background-color: #45a049;
+}
+/* 기본 피드백 버튼 스타일 */
+.feedback-btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;/*시간을 두고 색이 서서히 변화함*/
+}
+
+.feedback-btn:active {
+    transform: scale(0.95);  /* 클릭 시 버튼 크기 줄어듦 */
+}
+
+/* 만족 버튼 (녹색) */
+.feedback-btn.positive {
+    background-color: #4CAF50;  /* 초록색 */
+    color: white;
+}
+
+.feedback-btn.positive:hover {
+    background-color: #45a049;  /* 약간 어두운 초록색 */
+}
+
+/* 불만족 버튼 (적색) */
+.feedback-btn.negative {
+    background-color: #f44336;  /* 빨간색 */
+    color: white;
+}
+
+.feedback-btn.negative:hover {
+    background-color: #e53935;  /* 약간 어두운 빨간색 */
+}
+/* 처음엔 안 보이도록 설정 */
+#thank-you {
+    opacity: 0;
+    transition: opacity 2s ease;
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* 나타날 때 클래스 추가 */
+#thank-you.visible {
+    opacity: 1;
 }
 
 p {
