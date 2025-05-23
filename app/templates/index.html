@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>스팸 메시지 분류기</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
     <div class="container">
@@ -12,6 +13,8 @@
         <form action="/predict" method="post">
             <label for="message">메시지를 입력하세요:</label><br>
             <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
+
+
             <div>
                 <label>모델 선택:</label><br>
                 <input type="radio" id="naive_bayes" name="model_choice" value="naive_bayes" checked>
@@ -22,24 +25,36 @@
             <br>
             <input type="submit" value="분류하기">
         </form>
+
         {% if input_text %}
             <h2>입력 메시지:</h2>
             <p>{{ input_text }}</p>
+<p id="displayed-message" style="display:none;">{{ input_text }}</p>
         {% endif %}
-        {% if prediction_text %}
-            <h2>예측 결과:</h2>
-	    	{% if '확실합니다' in prediction_text %}
-			        <p class="result-spam">{{ prediction_text | safe }}</p>
-	    	{% elif ' 의심됩니다.' in prediction_text%}
-			        <p class="result-sus">{{ prediction_text | safe }}</p>
- 		{% elif  ' 정상 문자' in prediction_text%}
-				<p class="result-norm">{{ prediction_text | safe }}</p>
-	        {% else %}
-			            
-	        {% endif %}
-	    {% else %}
+	{% if prediction_text %}
+	    <h2>예측 결과:</h2>
+	   {% if '확실합니다' in prediction_text %}
+			<p class="result-spam">{{ prediction_text | safe }}</p>
+		{% elif ' 의심됩니다.' in prediction_text%}
+			<p class="result-sus">{{ prediction_text | safe }}</p>
+		{% elif  ' 정상 문자' in prediction_text%}
+			<p class="result-norm">{{ prediction_text | safe }}</p>
+		{% else %}
+	    	{% endif %}
+<div id="feedback-section" 
+     data-prediction="{{ prediction_label }}" 
+     data-model="{{ model_choice }}">
+    <h3 id="feedback-question">결과가 만족스러운가요?</h3>
+    <button class="feedback-btn positive" onclick="submitFeedback('positive')">만족</button>
+    <button class="feedback-btn negative" onclick="submitFeedback('negative')">불만족</button>
+</div>
+
+<p id="thank-you" class="fade-text">감사합니다!</p>
+
+	{% else %}
 	    
-        {% endif %}
+	{% endif %}
+
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
