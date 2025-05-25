@@ -1,9 +1,9 @@
 import joblib
 import numpy as np
-from app.utils.preprocessing import preprocess_user_input
+from utils.preprocessing import preprocess_user_input
 import os
 
-def load_model_and_vectorizer_Naive(vectorizer_path='app/model/vectorizer.pkl', model_path='app/model/spam_classifier.pkl'):  # 기본 경로 설정
+def load_model_and_vectorizer_Naive(vectorizer_path='model/vectorizer.pkl', model_path='model/spam_classifier.pkl'):  # 기본 경로 설정
     try:
         vectorizer = joblib.load(vectorizer_path)
         model = joblib.load(model_path)
@@ -15,10 +15,10 @@ def load_model_and_vectorizer_Random(): #vectorizer_path='app/model/vectorizer.p
     return  #미구현
     
 
-def predict_with_selected_model(processed_input, model_choice, return_label=False):
+def predict_with_selected_model(user_input, model_choice, return_label=False):
     if model_choice == 'naive_bayes':
         vectorizer, model = load_model_and_vectorizer_Naive()
-        prediction, label = predict_message_naive(processed_input, vectorizer, model)
+        prediction, label = predict_message_naive(user_input, vectorizer, model)
     elif model_choice == 'random_forest':
         prediction, label = predict_message_random()
     else:
@@ -30,14 +30,20 @@ def predict_with_selected_model(processed_input, model_choice, return_label=Fals
 
 import numpy as np
 
-def predict_message_naive(message, vectorizer, model):
+def predict_message_naive(user_input, vectorizer, model):
     if vectorizer is None or model is None:
-        return "모델 로드 실패. 예측 불가.", "unknown"
+        Error_text = "모델 로드에 실패하였습니다. model/.pkl 파일을 확인해주세요."
+        label = 2
+        return Error_text , label
+    
+    if len(user_input) < 12:
+        Error_text = "입력 텍스트가 너무 짧습니다."
+        label = 2
+        return Error_text , label
+    
+    processed_message = preprocess_user_input(user_input)
 
-    if len(message) < 12:
-        return "입력 텍스트가 너무 짧습니다.", "too_short"
-
-    message_vec = vectorizer.transform([message])
+    message_vec = vectorizer.transform([processed_message])
 
     log_probs = model.feature_log_prob_
     indices = message_vec.indices
@@ -52,7 +58,9 @@ def predict_message_naive(message, vectorizer, model):
 
     length = np.sum(counts)
     if length == 0:
-        return "입력 텍스트가 너무 짧습니다.", "too_short"
+        Error_text = "해당 분류기는 한국어 기반으로 만들어졌습니다. 문장의 구성이 불필요한 언어(영어 등)가 너무 많은지 확인해주세요."
+        label = 2
+        return Error_text , label
 
     avg_log_likelihoods = np.array(class_log_likelihoods) / length
     class_log_prior = np.log(model.class_count_ / model.class_count_.sum())
@@ -83,4 +91,4 @@ if __name__ == '__main__':
     processed_input = preprocess_user_input(user_input)
     print("입력 텍스트:", user_input)
     print("전처리 결과:", processed_input)
-    vectorizer, model = predict_with_selected_model(processed_input, model_choice= "Naive Bayes")
+    vectorizer, model = predict_with_selected_model(user_input, model_choice= "Naive Bayes")
