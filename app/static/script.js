@@ -1,3 +1,15 @@
+
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const loadingDiv = document.getElementById('loading');
+
+    form.addEventListener('submit', function () {
+        // 메시지를 분류하는 동안 로딩 표시
+        loadingDiv.style.display = 'block';
+    });
+});
+
+
 function submitFeedback(feedback) {
     const message = document.getElementById("displayed-message").innerText;
     const section = document.getElementById("feedback-section");
