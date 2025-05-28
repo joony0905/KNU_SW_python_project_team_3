@@ -1,0 +1,139 @@
+/* static/style.css */
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f0f0f0;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+label {
+    font-weight: bold;
+}
+
+textarea {
+    width: 100%;
+    padding: 3px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.result-norm{
+	color: green;
+	font-weight:bold;
+}
+.result-sus{
+	color: orange;
+	font-weight:bold;
+}
+.result-spam{
+	color: red;
+	font-weight: bold;
+}
+input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+}
+input[type="submit"]:active {
+    transform: scale(0.95);  /* 클릭 시 버튼 크기 줄어듦 */
+}
+
+input[type="submit"]:hover {
+    background-color: #45a049;
+}
+/* 기본 피드백 버튼 스타일 */
+.feedback-btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;/*시간을 두고 색이 서서히 변화함*/
+}
+
+.feedback-btn:active {
+    transform: scale(0.95);  /* 클릭 시 버튼 크기 줄어듦 */
+}
+
+/* 만족 버튼 (녹색) */
+.feedback-btn.positive {
+    background-color: #4CAF50;  /* 초록색 */
+    color: white;
+}
+
+.feedback-btn.positive:hover {
+    background-color: #45a049;  /* 약간 어두운 초록색 */
+}
+
+/* 불만족 버튼 (적색) */
+.feedback-btn.negative {
+    background-color: #f44336;  /* 빨간색 */
+    color: white;
+}
+
+.feedback-btn.negative:hover {
+    background-color: #e53935;  /* 약간 어두운 빨간색 */
+}
+/* 처음엔 안 보이도록 설정 */
+#thank-you {
+    opacity: 0;
+    transition: opacity 2s ease;
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* 나타날 때 클래스 추가 */
+#thank-you.visible {
+    opacity: 1;
+}
+
+p {
+    margin-top: 10px;
+}
+
+/* 로딩 컨테이너 */
+.loading-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    color: #333;
+    margin-top: 10px;
+}
+
+/* 스피너 스타일 */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 4px solid #ccc;
+    border-top: 4px solid #007BFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* 회전 애니메이션 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+
