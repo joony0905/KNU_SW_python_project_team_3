@@ -15,9 +15,9 @@
             <div>
                 <label>모델 선택:</label><br>
                 <input type="radio" id="naive_bayes" name="model_choice" value="naive_bayes" checked>
-                <label for="naive_bayes">Naive Bayes</label>
+                <label for="naive_bayes">빠른 판단</label>
                 <input type="radio" id="random_forest" name="model_choice" value="random_forest">
-                <label for="random_forest">Random Forest</label><br><br>
+                <label for="random_forest">정밀 판단(Beta)</label><br><br>
                 <span style="margin-left: 5px;">github</span>
                 <a href="https://github.com/joony0905/KNU_SW_python_project_team_3" class="github-link" target="_blank">
                 <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" width="20" style="vertical-align: middle;">
@@ -30,7 +30,7 @@
         <!-- 로딩 메시지 -->
         <div id="loading" style="display: none;" class="loading-container">
             <div class="spinner"></div>
-            <p>⏳ 메시지를 분류하는 중입니다... 잠시만 기다려주세요.</p>
+            <p>⏳ 메시지를 분석 중입니다... 잠시만 기다려주세요.</p>
         </div>
 
         {% if input_text %}
@@ -39,23 +39,28 @@
             <p id="displayed-message" style="display:none;">{{ input_text }}</p>
         {% endif %}
 
+        
         {% if prediction_text %}
-            <h2>예측 결과:</h2>
-            {% if '확실합니다' in prediction_text %}
-                <p class="result-spam">{{ prediction_text | safe }}</p>
-            {% elif ' 의심됩니다.' in prediction_text %}
-                <p class="result-sus">{{ prediction_text | safe }}</p>
-            {% elif ' 정상 문자' in prediction_text %}
-                <p class="result-norm">{{ prediction_text | safe }}</p>
-            {% else %}
-                <p class="result-sus">{{ prediction_text | safe }}</p>
-            {% endif %}
+            {% for line in prediction_text.split('<br>') %}
+                {% if '🚨' in line[:2] %}
+                    <p class="result-spam">{{ line | safe }}</p>
+                {% elif '⚠️' in line[:2] %}
+                    <p class="result-sus">{{ line | safe }}</p>
+                {% elif '✅' in line[:2] %}
+                    <p class="result-norm">{{ line | safe }}</p>
+                {% else %}
+                    <p class="result">{{ line | safe }}</p>
+                {% endif %}
+            {% endfor %}
+
+
+
 
             {% if prediction_label != 2 %}
                 <div id="feedback-section" 
                      data-prediction="{{ prediction_label }}" 
                      data-model="{{ model_choice }}">
-                    <h3 id="feedback-question">사용자 응답을 남겨주세요!<br> 입력 문자메시지 및 예측 결과는 Application 개선에 큰 도움이 되며 해당 목적으로만 사용됩니다.</h3>
+                    <h3 id="feedback-question">사용자 응답을 남겨주세요!<br> 입력 문자메시지 및 예측 결과는 Application 개선에 큰 도움이 되며, <br>개인 정보는 해당 목적으로만 사용됩니다.</h3>
                     <button class="feedback-btn positive" onclick="submitFeedback('positive')">만족</button>
                     <button class="feedback-btn negative" onclick="submitFeedback('negative')">불만족</button>
                 </div>
