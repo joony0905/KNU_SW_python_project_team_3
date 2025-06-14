@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, jsonify
 from utils.file_io import *
 from utils.preprocessing import *
-from model.predict_test import *
+from model.predict import *
 from model.data_loader import *
 from utils.feedback import *
 
