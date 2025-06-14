@@ -10,7 +10,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, IsolationForest
+from sklearn.cluster import KMeans
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 import swifter
@@ -330,7 +331,201 @@ def rf_train_and_evaluate_model(
             print("잘못된 입력입니다.")
 
 
+def k_means_clustering(
+    if_phishing_path='data/processed/if_cleand_data.csv',
+    init_phishing_path = 'data/raw/init_phishing.csv',
+    vectorizer_path='model/if_count_vectorizer.pkl',
+    kmeans_model_path='model/kmeans_spam.pkl',
+    num_clusters=2
+):
+
+    # 스팸 원본 데이터 로드
+    if os.path.exists(if_phishing_path):
+        spam_df = pd.read_csv(if_phishing_path, encoding='utf-8-sig')
+        print(f"스팸 전처리 데이터 로드 완료: {len(spam_df)} rows")
+    else:
+        print(f"{if_phishing_path} 가 존재하지 않습니다. 전처리를 진행합니다.")
+        spam_df = pd.read_csv(init_phishing_path, encoding='cp949')
+        spam_df['message'] = (
+                spam_df['Spam message']
+                .astype(str)
+                .swifter.apply(lambda x: tokenize_and_filter(clean_text(x)))
+            )
+        spam_df.to_csv(if_phishing_path, index=False, columns=['message'], encoding='utf-8-sig')
+        print("전처리 데이터 저장 완료")
+
+    # 벡터라이저 로드
+    if os.path.exists(vectorizer_path):
+        vectorizer = joblib.load(vectorizer_path)
+        print("CountVectorizer 로드 완료")
+    else:
+        print(f"{vectorizer_path} 가 존재하지 않습니다. if_count 벡터라이저를 생성합니다..")
+        vectorizer = CountVectorizer(
+                    max_features=20000,
+                    ngram_range=(1,1), 
+                    min_df=3,            
+                    max_df=0.95           
+                    )
+        vectorizer.fit(spam_df['message'])
+        joblib.dump(vectorizer, vectorizer_path)
+        print("vectorizer 생성 및 저장")
+        
+    
+    
+    # 벡터화
+    X_spam = vectorizer.transform(spam_df['message'])
+
+    #find_optimal_k(X_spam[:10000], max_k=8)
+    #k=2가 제일 좋은 성능 보였음..
+    #return
+
+
+    # KMeans 학습
+    sample_size = min(50_000, X_spam.shape[0])
+    print(f"📌 KMeans 클러스터링 시작: {num_clusters}개 클러스터 (샘플 {sample_size}개)")
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+    kmeans.fit(X_spam[:sample_size])
+
+    # 전체 스팸 데이터에 클러스터 ID 부여
+    spam_clusters = kmeans.predict(X_spam)
+    spam_df['category'] = spam_clusters
+
+    # 저장 여부 선택
+    while True:
+        try:
+            flag = int(input("KMeans 모델과 카테고리 결과를 저장할까요? 1: 예 / 0: 아니오 "))
+            if flag == 1:
+                # 카테고리 붙은 CSV (선택) 저장
+                new_csv_path = if_phishing_path.replace('.csv', '_with_category.csv')
+                spam_df.to_csv(new_csv_path, index=False, columns=['message', 'category'], encoding='utf-8-sig')
+                # KMeans 모델 저장
+                joblib.dump(kmeans, kmeans_model_path)
+                print(f"저장 완료: {new_csv_path}, {kmeans_model_path}")
+                break
+            elif flag == 0:
+                print("저장하지 않고 종료합니다.")
+                break
+            else:
+                print("0 또는 1을 입력해주세요.")
+        except ValueError:
+            print("잘못된 입력입니다.")
+
+
+
+def if_train_and_evaluate_model(
+    category_phishing_path='data/processed/if_cleand_data_with_category.csv',
+    vectorizer_path='model/if_count_vectorizer.pkl',
+    kmeans_model_path='model/kmeans_spam.pkl',
+    if_model_dir='model/category_if_models/',
+    contamination=0.01,
+    min_samples_per_category=500,  # ✅ 소형 기준
+    merged_category_id=999         # ✅ 기타로 병합할 ID
+):
+
+    os.makedirs(if_model_dir, exist_ok=True)
+
+    # 1) 카테고리 포함 스팸 데이터 로드
+    if os.path.exists(category_phishing_path):
+        spam_df = pd.read_csv(category_phishing_path, encoding='utf-8-sig')
+        print(f"📌 카테고리 포함 스팸 로드 완료: {len(spam_df)} rows")
+    else:
+        print(f"{category_phishing_path} 가 존재하지 않습니다.")
+        return
+
+    # 2) Vectorizer 로드
+    if os.path.exists(vectorizer_path):
+        vectorizer = joblib.load(vectorizer_path)
+    else:
+        print(f"{vectorizer_path} 가 존재하지 않습니다.")
+        return
+
+    # 3) KMeans 로드
+    if os.path.exists(kmeans_model_path):
+        kmeans = joblib.load(kmeans_model_path)
+    else:
+        print(f"{kmeans_model_path} 가 존재하지 않습니다.")
+        return
+
+    # 4) 벡터화
+    X_spam = vectorizer.transform(spam_df['message'])
+
+    # 5) category 없으면 KMeans로 예측
+    if 'category' not in spam_df.columns:
+        spam_df['category'] = kmeans.predict(X_spam)
+        print(f"📌 KMeans로 category 컬럼 추가 완료")
+
+    # 6) 소형 클러스터 식별 & 병합
+    small_clusters = []
+    merged_indices = []
+
+    for category_id in spam_df['category'].unique():
+        n_samples = (spam_df['category'] == category_id).sum()
+        if n_samples < min_samples_per_category:
+            small_clusters.append(category_id)
+            merged_indices.extend(spam_df[spam_df['category'] == category_id].index.tolist())
+
+    if merged_indices:
+        spam_df.loc[merged_indices, 'category'] = merged_category_id
+        print(f"⚙️ 소형 클러스터 {small_clusters} 병합 → '기타' Category {merged_category_id} (총 {len(merged_indices)} samples)")
+    else:
+        print("✅ 소형 클러스터 없음 → 병합 생략")
+
+    # 7) 카테고리별 IF 학습
+    if_models = {}
+    score_ranges = {}  # 카테고리별 score 범위 기록
+    for category_id in spam_df['category'].unique():
+        X_cat = X_spam[spam_df['category'] == category_id]
+        n_samples = X_cat.shape[0]
+
+        if n_samples < min_samples_per_category:
+            print(f"⚠️ Category {category_id} : {n_samples}개 → 너무 적어 IF 스킵")
+            continue
+
+        print(f"📌 Category {category_id} : {n_samples}개 → IF 학습")
+        if_model = IsolationForest(contamination=contamination, random_state=42)
+        if_model.fit(X_cat)
+        if_models[category_id] = if_model
+
+        # 학습 데이터에서 decision_function 점수 범위 확인
+        try:
+            scores = if_model.decision_function(X_cat)
+            score_min, score_max = scores.min(), scores.max()
+            print(f"   ┗ decision_function score: min={score_min:.4f}, max={score_max:.4f}")
+            score_ranges[category_id] = {
+            "min": score_min,
+            "max": score_max
+            }
+        except Exception as e:
+            print(f"   ⚠️ 스코어 계산 오류: {e}")
+
+    # ✅ 8) 저장 여부
+    while True:
+        try:
+            flag = int(input("score_range 및 카테고리별 IF 모델 저장할까요? 1: 예 / 0: 아니오 ").strip())
+            if flag == 1:
+                for cid, if_model in if_models.items():
+                    path = os.path.join(if_model_dir, f"if_category_{cid}.pkl")
+                    joblib.dump(if_model, path)
+                    print(f"✅ 저장 완료: {path}")
+                ranges_path = os.path.join(if_model_dir, "if_score_ranges.pkl")
+                joblib.dump(score_ranges, ranges_path)
+                print(f"✅ score_ranges 저장 완료: {ranges_path}")
+                break
+            elif flag == 0:
+                print("저장을 건너뜁니다.")
+                break
+            else:
+                print("0 또는 1을 입력해주세요.")
+        except ValueError:
+            print("잘못된 입력입니다.")
+
+
+
+
+
+
 if __name__ == '__main__':
     #naive_train_and_evaluate_model()
-    rf_train_and_evaluate_model() 
-    
+    #rf_train_and_evaluate_model() 
+    #k_means_clustering()
+    if_train_and_evaluate_model()
